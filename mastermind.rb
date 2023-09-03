@@ -6,8 +6,8 @@ class Mastermind
   WHITE_PEG = 'W'
   NO_PEG = '_'
   ROLE = [:GUESSER, :CREATOR]
-
-  attr_reader :code_length, :num_of_colors
+  
+  attr_reader :code_length, :num_of_colors, :feedback
 
   def initialize(code_length: 4, num_of_colors: 6, num_of_guesses: 6)
     random = Random.new
@@ -64,7 +64,17 @@ class Mastermind
 
   def human_play_as_creator
     puts "code: #{@secret_code} | colors: 1-#{@num_of_colors} | code length: #{@code_length} | max guesses: #{@num_of_guesses}"
-    @computer_player.generate_guess
+    @num_of_guesses.times do |i|
+      print "GUESS# #{i + 1}/#{@num_of_guesses}: "
+      computer_guess = @computer_player.generate_guess
+      show_guess_feedback(computer_guess)
+      if correct_guess?
+        puts 'Correct!'
+        break
+      elsif i == (@num_of_guesses - 1)
+        puts "You lose. Correct answer is #{@secret_code}"
+      end
+    end
   end
 
   def valid_guess?(guess)
@@ -78,15 +88,30 @@ class Mastermind
   end
 
   def show_guess_feedback(player_guess)
-    @code_length.times do |index|
-      @feedback[index] = if @secret_code[index] == player_guess[index]
-                           BLACK_PEG
-                         elsif @secret_code.include?(player_guess[index])
-                           WHITE_PEG
-                         else
-                           NO_PEG
-                         end
+    p player_guess
+    player_guess_num_black_pegs = []
+    player_guess_num_white_pegs = []
+    @feedback = @feedback.each_with_index.map do |_, index|
+      if @secret_code[index] == player_guess[index]
+        player_guess_num_black_pegs << player_guess[index]
+        BLACK_PEG
+      else
+        NO_PEG
+      end
     end
-    print "Feedback: #{@feedback}\n"
+    @feedback = @feedback.each_with_index.map do |feedback, index|
+      if @secret_code[index] != player_guess[index] && @secret_code.include?(player_guess[index])
+        if (player_guess_num_black_pegs.count(player_guess[index]) + player_guess_num_white_pegs.count(player_guess[index])) < @secret_code.count(player_guess[index])
+          player_guess_num_white_pegs << player_guess[index]
+          WHITE_PEG
+        else
+          NO_PEG
+        end
+      else
+        feedback
+      end
+    end
+
+    puts "Feedback: #{@feedback}"
   end
 end
